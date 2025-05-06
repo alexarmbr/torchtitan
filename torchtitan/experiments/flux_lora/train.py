@@ -78,11 +78,15 @@ class FluxTrainer(Trainer):
             job_config=job_config,
         )
 
+        # IMPORTANT(replicate): I am turning off the gradient for all parameters in the model except
+        # for the final layer, this, and activation checkpointing which is enabled in the config reduces memory requirement
+        # by enough that we can run the training loop on a single H200
+
         model = self.model_parts[0]
         for param in model.parameters():
             param.requires_grad = False
 
-        # train a couple of layers
+        # train last layer
         for param in model.final_layer.parameters():
             param.requires_grad = True
 
@@ -185,7 +189,6 @@ class FluxTrainer(Trainer):
         self.metrics_processor.log(self.step, global_avg_loss, global_max_loss)
 
         if (
-
             self.step % self.job_config.eval.eval_freq == 0
             or self.step == self.job_config.training.steps
         ):
@@ -219,8 +222,6 @@ class FluxTrainer(Trainer):
             t5_encoder=self.t5_encoder,
             clip_encoder=self.clip_encoder,
         )
-
-        logger.info(f"EVAL output_dir: {os.path.join(self.job_config.job.dump_folder, self.job_config.eval.save_img_folder)}")
 
         save_image(
             name=f"image_rank{str(torch.distributed.get_rank())}_{self.step}.png",

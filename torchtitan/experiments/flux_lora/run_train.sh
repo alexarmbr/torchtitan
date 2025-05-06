@@ -15,7 +15,7 @@ set -ex
 # LOG_RANK=0,1 NGPU=4 ./torchtitan/experiments/flux/run_train.sh
 NGPU=${NGPU:-"8"}
 export LOG_RANK=${LOG_RANK:-0}
-CONFIG_FILE=${CONFIG_FILE:-"./torchtitan/experiments/flux_lora/train_configs/debug_model.toml"}
+CONFIG_FILE=${CONFIG_FILE:-"./torchtitan/experiments/flux_lora/train_configs/flux-lora_dev_model.toml"}
 
 overrides=""
 if [ $# -ne 0 ]; then

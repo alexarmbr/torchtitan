@@ -1,12 +1,26 @@
-# Background (replicate)
-- I copied the torchtitan/experiments/flux folder and made a new torchtitan/experiments/flux_lora folder, and made the necessary changes to imports to make it work. Working out of the flux_lora folder will allow us to strip out everything that we don't need, while still being able to use the flux folder for reference, and merging improvements since this is being actively developed
-- recommend setting files.exclude in vscode to ignore the flux folder, so that you are always opening files from the flux_lora folder
-- plan is to strip out everything that we don't need, add support for lora training, and then tune it to make it as fast as possible.
+# Flux LoRA Training
+- torchtitan/experiments/flux_lora is being developed for optimized, parallelized lora training.
+
+### setup
+- the .devcontainer/Dockerfile builds an environment which should be able to run this code.
+
+### getting started
+- run the following command
+```bash
+CUDA_VISIBLE_DEVICES=0 NGPU=1 ./torchtitan/experiments/flux_lora/run_train.sh
+```
+this will use the `flux-lora_dev_model.toml` config file, which is currently set to run 11 training steps, and run an eval every 2 steps.
+currently eval consists of generating a single cat image and saving it to `outputs/img/image_rank<rank>_<step>.png`. Ensure you can run these
+training loops and that the images look sensible. The first time you initialize the model, a flux dev checkpoint will be downloaded from huggingface
+and saved to the huggingface home directory (set HF_HOME to configure this)
+
+
+### suggestions
+- make sure you are always working with files in the `flux_lora` directory, not the `flux` directory. I set vscode files.exclude to ignore the `flux` directory
+- keep an eye out for comments tagged IMPORTANT(replicate), these are notes about important details
 
 # TODO
-### setup
-
-**goal**: Turn this into a working LoRA trainer
+**goal #1**: Turn this into a working LoRA trainer
 
 - [x] initialize weights from a checkpoint
 - [x] make eval work
@@ -16,17 +30,14 @@
 - [ ] train a working LoRA model on the zeke2.zip dataset, make sure quality is up to par with what we expect
 - [ ] train a working LoRA model on the zeke2.zip dataset on n>1 GPUs, make sure quality matches single GPU training
 
-### Performance tuning of training loop
+**goal #2**: Make 1000 training steps happen on 8xH100s in <1 minute, and produce a high quality LoRA
+- [ ] come up with a set of TODOs that will get us to this goal
 
-**goal**: Make 1000 training steps happen on 8xH100s in <1 minute, and produce a high quality LoRA
+**goal #3**: tbd, but probably something to do with turning this into a deployable system.
 
-- try different parallelism strategies (tensor parallelism, data parallelism, fully sharded data parallelism, etc)
-- try different optimizers/learning rates/warmup strategies, batch sizes, etc
-- try face cropping the inputs
-...
 
-### misc notes about the code base
-- this repo contains sophisticated checkpointing functionality, we dont want to use this. The only checkpoint we should be saving is the LoRA weights at the end of training.
+
+# original README:
 
 # FLUX_LORA model in torchtitan
 

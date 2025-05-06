@@ -5,6 +5,8 @@ RUN apt-get update && apt-get install -y software-properties-common && \
     apt-get update && apt-get install -y python3.10 && \
     apt-get install -y python3-pip
 
+
+# should result in torch 2.7.0+cu126 being installed
 RUN pip install "torchdata>=0.8.0" \
     "datasets>=2.21.0" \
     "tomli>=1.1.0" \
@@ -20,8 +22,6 @@ RUN pip install "torchdata>=0.8.0" \
     "sentencepiece" \
     "Pillow"
 
-
-# symlink python3 to python
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
 

@@ -15,11 +15,11 @@ from torchtitan.experiments.flux_lora.model.autoencoder import AutoEncoderParams
 from torchtitan.experiments.flux_lora.parallelize_flux import parallelize_flux
 from torchtitan.protocols.train_spec import register_train_spec, TrainSpec
 
-from .model.model import FluxModel, FluxModelArgs
+from .model.model import FluxLoraModel, FluxLoraModelArgs
 
 __all__ = [
-    "FluxModelArgs",
-    "FluxModel",
+    "FluxLoraModelArgs",
+    "FluxLoraModel",
     "flux_configs",
     "parallelize_flux",
 ]
@@ -29,7 +29,7 @@ flux_configs = {
 
     # these keys correspond to 'flavor' in train_configs
 
-    "flux-dev": FluxModelArgs(
+    "flux-lora-dev": FluxLoraModelArgs(
         in_channels=64,
         out_channels=64,
         vec_in_dim=768,
@@ -54,7 +54,7 @@ flux_configs = {
             shift_factor=0.1159,
         ),
     ),
-    "flux-schnell": FluxModelArgs(
+    "flux-lora-schnell": FluxLoraModelArgs(
         in_channels=64,
         out_channels=64,
         vec_in_dim=768,
@@ -79,7 +79,7 @@ flux_configs = {
             shift_factor=0.1159,
         ),
     ),
-    "flux-debug": FluxModelArgs(
+    "flux-lora-debug": FluxLoraModelArgs(
         in_channels=64,
         out_channels=64,
         vec_in_dim=768,
@@ -109,8 +109,8 @@ flux_configs = {
 
 register_train_spec(
     TrainSpec(
-        name="flux_lora",
-        cls=FluxModel,
+        name="flux-lora",
+        cls=FluxLoraModel,
         config=flux_configs,
         parallelize_fn=parallelize_flux,
         pipelining_fn=None,

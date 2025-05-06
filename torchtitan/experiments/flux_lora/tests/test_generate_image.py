@@ -16,7 +16,7 @@ from torchtitan.experiments.flux_lora.dataset.tokenizer import FluxTokenizer
 from torchtitan.experiments.flux_lora.model.autoencoder import AutoEncoderParams, load_ae
 from torchtitan.experiments.flux_lora.model.hf_embedder import FluxEmbedder
 
-from torchtitan.experiments.flux_lora.model.model import FluxModel
+from torchtitan.experiments.flux_lora.model.model import FluxLoraModel
 from torchtitan.experiments.flux_lora.sampling import generate_image, save_image
 
 
@@ -134,5 +134,5 @@ class TestGenerateImage:
         """
         config = flux_configs["flux-debug"]
         config.context_in_dim = context_in_dim
-        model = FluxModel(config).to(device, dtype)
+        model = FluxLoraModel(config).to(device, dtype)
         return model

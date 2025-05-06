@@ -19,7 +19,7 @@ from torchtitan.config_manager import JobConfig
 from torchtitan.experiments.flux_lora.model.autoencoder import AutoEncoder
 
 from torchtitan.experiments.flux_lora.model.hf_embedder import FluxEmbedder
-from torchtitan.experiments.flux_lora.model.model import FluxModel
+from torchtitan.experiments.flux_lora.model.model import FluxLoraModel
 from torchtitan.experiments.flux_lora.utils import (
     create_position_encoding_for_latents,
     generate_noise_latent,
@@ -75,7 +75,7 @@ def generate_image(
     device: torch.device,
     dtype: torch.dtype,
     job_config: JobConfig,
-    model: FluxModel,
+    model: FluxLoraModel,
     prompt: str,
     autoencoder: AutoEncoder,
     t5_tokenizer: Tokenizer,
@@ -152,7 +152,7 @@ def generate_image(
 def denoise(
     device: torch.device,
     dtype: torch.dtype,
-    model: FluxModel,
+    model: FluxLoraModel,
     img_width: int,
     img_height: int,
     denoising_steps: int,

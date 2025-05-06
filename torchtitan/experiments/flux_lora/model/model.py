@@ -25,7 +25,7 @@ from torchtitan.tools.logging import logger
 
 
 @dataclass
-class FluxModelArgs(BaseModelArgs):
+class FluxLoraModelArgs(BaseModelArgs):
     in_channels: int = 64
     out_channels: int = 64
     vec_in_dim: int = 768
@@ -47,18 +47,18 @@ class FluxModelArgs(BaseModelArgs):
         return nparams, 1
 
 
-class FluxModel(nn.Module, ModelProtocol):
+class FluxLoraModel(nn.Module, ModelProtocol):
     """
     Transformer model for flow matching on sequences.
 
     Agrs:
-        model_args: FluxModelArgs.
+        model_args: FluxLoraModelArgs.
 
     Attributes:
         model_args (TransformerModelArgs): Model configuration arguments.
     """
 
-    def __init__(self, model_args: FluxModelArgs):
+    def __init__(self, model_args: FluxLoraModelArgs):
         super().__init__()
 
         self.model_args = model_args
@@ -109,24 +109,25 @@ class FluxModel(nn.Module, ModelProtocol):
 
     def init_weights(self, buffer_device=None):
 
+        # IMPORTANT(replicate): this function originally randomly initialized weights, it is modified to load weights from a huggingface checkpoint
+
         # init from hf checkpoint
         from huggingface_hub import hf_hub_download
         from safetensors.torch import load_file as load_sft
 
-        # Print model keys before loading
-        model_keys = list(self.state_dict().keys())
-        logger.info(f"Model keys: {model_keys}")
-
-        # should download flux-dev if it does not exist
+        # should download flux-dev if it does not exist, do nothing if it does exist
+        # TODO(replicate): if we are going to be fine tuning flux schell, make this dynamic
         ckpt_path = hf_hub_download(repo_id="black-forest-labs/FLUX.1-dev", filename="flux1-dev.safetensors")
         state_dict = load_sft(ckpt_path)
         
-        # Print checkpoint keys
+        # expect no missing keys - parameters that are in the model but not loaded from the checkpoint
+        # allow for unexpected keys - parameters that are not in the model but present in the checkpoint
         missing, unexpected = self.load_state_dict(state_dict, strict=False)
         assert len(missing) == 0, f"Missing keys: {missing}"
-        print(f"Keys present in the state dict that are not in the model: {unexpected}")
-        # TODO maybe add guidance embedding layer, this is the only thing 'unexpected' layer in the state dict
-        # i.e. weights for a guidance embedding layer are present in the checkpoint, but not in the model
+        print(f"Keys present in the state dict that are not in this model implementation: {unexpected}")
+        # TODO(replicate): maybe add guidance embedding layer, this is the only unexpected layer in the state dict
+        # i.e. weights for a guidance embedding layer are present in the checkpoint, but not in this implementation of the model
+        # this layer is present in the refererence BFL implementation of flux
         # https://github.com/black-forest-labs/flux/blob/main/src/flux/model.py#L58
 
     def forward( 
@@ -161,15 +162,15 @@ class FluxModel(nn.Module, ModelProtocol):
         return img
 
     @classmethod
-    def from_model_args(cls, model_args: FluxModelArgs) -> "FluxModel":
+    def from_model_args(cls, model_args: FluxLoraModelArgs) -> "FluxLoraModel":
         """
-        Initialize a Flux model from a FluxModelArgs object.
+        Initialize a Flux model from a FluxLoraModelArgs object.
 
         Args:
-            model_args (FluxModelArgs): Model configuration arguments.
+            model_args (FluxLoraModelArgs): Model configuration arguments.
 
         Returns:
-            FluxModel: FluxModel model.
+            FluxLoraModel: FluxLoraModel model.
 
         """
         return cls(model_args)
