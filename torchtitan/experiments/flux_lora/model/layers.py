@@ -12,7 +12,7 @@ import torch
 from einops import rearrange
 from torch import nn, Tensor
 
-from torchtitan.experiments.flux.model.math import attention, rope
+from torchtitan.experiments.flux_lora.model.math import attention, rope
 
 
 class EmbedND(nn.Module):
@@ -75,12 +75,22 @@ class MLPEmbedder(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         return self.out_layer(self.silu(self.in_layer(x)))
 
+class RMSNorm(torch.nn.Module):
+    def __init__(self, dim: int):
+        super().__init__()
+        self.scale = nn.Parameter(torch.ones(dim))
+
+    def forward(self, x: Tensor):
+        x_dtype = x.dtype
+        x = x.float()
+        rrms = torch.rsqrt(torch.mean(x**2, dim=-1, keepdim=True) + 1e-6)
+        return (x * rrms).to(dtype=x_dtype) * self.scale
 
 class QKNorm(torch.nn.Module):
     def __init__(self, dim: int):
         super().__init__()
-        self.query_norm = nn.RMSNorm(dim)
-        self.key_norm = nn.RMSNorm(dim)
+        self.query_norm = RMSNorm(dim)
+        self.key_norm = RMSNorm(dim)
 
     def init_weights(self):
         self.query_norm.reset_parameters()

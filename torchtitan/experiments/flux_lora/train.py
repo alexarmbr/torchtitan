@@ -78,6 +78,14 @@ class FluxTrainer(Trainer):
             job_config=job_config,
         )
 
+        model = self.model_parts[0]
+        for param in model.parameters():
+            param.requires_grad = False
+
+        # train a couple of layers
+        for param in model.final_layer.parameters():
+            param.requires_grad = True
+
     def train_step(self, input_dict: dict[str, torch.Tensor], labels: torch.Tensor):
         # generate t5 and clip embeddings
         input_dict["image"] = labels
@@ -176,14 +184,14 @@ class FluxTrainer(Trainer):
 
         self.metrics_processor.log(self.step, global_avg_loss, global_max_loss)
 
-        # Evaluate the model during training
-        # if (
-        #     self.step % self.job_config.eval.eval_freq == 0
-        #     or self.step == self.job_config.training.steps
-        # ):
-        #     model.eval()
-        #     self.eval_step()
-        #     model.train()
+        if (
+
+            self.step % self.job_config.eval.eval_freq == 0
+            or self.step == self.job_config.training.steps
+        ):
+            model.eval()
+            self.eval_step()
+            model.train()
 
     def eval_step(self, prompt: str = "A photo of a cat"):
         """
@@ -194,7 +202,6 @@ class FluxTrainer(Trainer):
         different random seeds to each DP rank.
         2) [TODO] Calculate loss with fixed t value on validation set.
         """
-
         image = generate_image(
             device=self.device,
             dtype=self._dtype,
@@ -212,6 +219,8 @@ class FluxTrainer(Trainer):
             t5_encoder=self.t5_encoder,
             clip_encoder=self.clip_encoder,
         )
+
+        logger.info(f"EVAL output_dir: {os.path.join(self.job_config.job.dump_folder, self.job_config.eval.save_img_folder)}")
 
         save_image(
             name=f"image_rank{str(torch.distributed.get_rank())}_{self.step}.png",

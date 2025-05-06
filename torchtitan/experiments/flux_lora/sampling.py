@@ -16,11 +16,11 @@ from torch import Tensor
 
 from torchtitan.components.tokenizer import Tokenizer
 from torchtitan.config_manager import JobConfig
-from torchtitan.experiments.flux.model.autoencoder import AutoEncoder
+from torchtitan.experiments.flux_lora.model.autoencoder import AutoEncoder
 
-from torchtitan.experiments.flux.model.hf_embedder import FluxEmbedder
-from torchtitan.experiments.flux.model.model import FluxModel
-from torchtitan.experiments.flux.utils import (
+from torchtitan.experiments.flux_lora.model.hf_embedder import FluxEmbedder
+from torchtitan.experiments.flux_lora.model.model import FluxModel
+from torchtitan.experiments.flux_lora.utils import (
     create_position_encoding_for_latents,
     generate_noise_latent,
     pack_latents,
@@ -194,11 +194,11 @@ def denoise(
         t_vec = torch.full((bsz,), t_curr, dtype=dtype, device=device)
         pred = model(
             img=latents,
-            img_ids=latent_pos_enc,
-            txt=t5_encodings,
-            txt_ids=text_pos_enc,
-            y=clip_encodings,
-            timesteps=t_vec,
+            img_ids=latent_pos_enc.to(latents),
+            txt=t5_encodings.to(latents),
+            txt_ids=text_pos_enc.to(latents),
+            y=clip_encodings.to(latents),
+            timesteps=t_vec.to(latents),
         )
         if enable_classifer_free_guidance:
             pred_u, pred_c = pred.chunk(2)

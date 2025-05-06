@@ -11,13 +11,13 @@ import torch
 from torchtitan.config_manager import ConfigManager
 from torchtitan.experiments.flux import flux_configs
 
-from torchtitan.experiments.flux.dataset.tokenizer import FluxTokenizer
+from torchtitan.experiments.flux_lora.dataset.tokenizer import FluxTokenizer
 
-from torchtitan.experiments.flux.model.autoencoder import AutoEncoderParams, load_ae
-from torchtitan.experiments.flux.model.hf_embedder import FluxEmbedder
+from torchtitan.experiments.flux_lora.model.autoencoder import AutoEncoderParams, load_ae
+from torchtitan.experiments.flux_lora.model.hf_embedder import FluxEmbedder
 
-from torchtitan.experiments.flux.model.model import FluxModel
-from torchtitan.experiments.flux.sampling import generate_image, save_image
+from torchtitan.experiments.flux_lora.model.model import FluxModel
+from torchtitan.experiments.flux_lora.sampling import generate_image, save_image
 
 
 class TestGenerateImage:

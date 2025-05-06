@@ -7,11 +7,11 @@
 from dataclasses import dataclass, field
 
 import torch
-
+import torch.distributed as dist
 from torch import nn, Tensor
 
-from torchtitan.experiments.flux.model.autoencoder import AutoEncoderParams
-from torchtitan.experiments.flux.model.layers import (
+from torchtitan.experiments.flux_lora.model.autoencoder import AutoEncoderParams
+from torchtitan.experiments.flux_lora.model.layers import (
     DoubleStreamBlock,
     EmbedND,
     LastLayer,
@@ -108,27 +108,28 @@ class FluxModel(nn.Module, ModelProtocol):
         self.final_layer = LastLayer(self.hidden_size, 1, self.out_channels)
 
     def init_weights(self, buffer_device=None):
-        # Adapted from DiT weight initialization: https://github.com/facebookresearch/DiT/blob/main/models.py#L189
-        # initialize Linear Layers: img_in, txt_in
-        nn.init.xavier_uniform_(self.img_in.weight)
-        nn.init.constant_(self.img_in.bias, 0)
-        nn.init.xavier_uniform_(self.txt_in.weight)
-        nn.init.constant_(self.txt_in.bias, 0)
 
-        # Initialize time_in, vector_in (MLPEmbedder)
-        self.time_in.init_weights(init_std=0.02)
-        self.vector_in.init_weights(init_std=0.02)
+        # init from hf checkpoint
+        from huggingface_hub import hf_hub_download
+        from safetensors.torch import load_file as load_sft
 
-        # Initialize transformer blocks:
-        for block in self.single_blocks:
-            block.init_weights()
-        for block in self.double_blocks:
-            block.init_weights()
+        # Print model keys before loading
+        model_keys = list(self.state_dict().keys())
+        logger.info(f"Model keys: {model_keys}")
 
-        # Zero-out output layers:
-        self.final_layer.init_weights()
+        # should download flux-dev if it does not exist
+        ckpt_path = hf_hub_download(repo_id="black-forest-labs/FLUX.1-dev", filename="flux1-dev.safetensors")
+        state_dict = load_sft(ckpt_path)
+        
+        # Print checkpoint keys
+        missing, unexpected = self.load_state_dict(state_dict, strict=False)
+        assert len(missing) == 0, f"Missing keys: {missing}"
+        print(f"Keys present in the state dict that are not in the model: {unexpected}")
+        # TODO maybe add guidance embedding layer, this is the only thing 'unexpected' layer in the state dict
+        # i.e. weights for a guidance embedding layer are present in the checkpoint, but not in the model
+        # https://github.com/black-forest-labs/flux/blob/main/src/flux/model.py#L58
 
-    def forward(
+    def forward( 
         self,
         img: Tensor,
         img_ids: Tensor,
@@ -139,7 +140,6 @@ class FluxModel(nn.Module, ModelProtocol):
     ) -> Tensor:
         if img.ndim != 3 or txt.ndim != 3:
             raise ValueError("Input img and txt tensors must have 3 dimensions.")
-
         # running on sequences img
         img = self.img_in(img)
         vec = self.time_in(timestep_embedding(timesteps, 256))
